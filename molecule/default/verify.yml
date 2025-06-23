@@ -1,0 +1,72 @@
+---
+- name: Verify
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Verify initial creation results
+      assert:
+        that:
+          - item.changed == true
+          - item.msg == "DNS rewrite created successfully"
+          - item.rewrite.domain is defined
+          - item.rewrite.answer is defined
+        fail_msg: "DNS rewrite creation failed"
+        success_msg: "DNS rewrite created successfully"
+      loop: "{{ dns_rewrite_results.results }}"
+
+    - name: Verify idempotency
+      assert:
+        that:
+          - item.changed == false
+          - "'already exists with same values' in item.msg"
+        fail_msg: "Idempotency test failed"
+        success_msg: "Idempotency verified"
+      loop: "{{ idempotent_test_results.results }}"
+
+    - name: Verify update operation
+      assert:
+        that:
+          - update_test_result.changed == true
+          - update_test_result.msg == "DNS rewrite updated successfully"
+          - update_test_result.rewrite.answer == "192.168.1.200"
+        fail_msg: "Update operation failed"
+        success_msg: "Update operation successful"
+
+    - name: Verify check mode
+      assert:
+        that:
+          - check_mode_test_result.changed == true
+          - check_mode_verify_result.changed == true # Should create since check mode didn't actually create
+        fail_msg: "Check mode test failed"
+        success_msg: "Check mode working correctly"
+
+    - name: Verify delete operation
+      assert:
+        that:
+          - delete_test_result.changed == true
+          - delete_test_result.msg == "DNS rewrite deleted successfully"
+        fail_msg: "Delete operation failed"
+        success_msg: "Delete operation successful"
+
+    - name: Query AdGuard API directly to verify state
+      uri:
+        url: "http://adguard:3000/control/rewrite/list"
+        method: GET
+        headers:
+          Authorization: "Basic YWRtaW46cGFzc3dvcmQ=" # admin:password
+        status_code: 200
+      register: api_result
+
+    - name: Verify expected entries exist in AdGuard
+      assert:
+        that:
+          - api_result.json | selectattr('domain', 'equalto', 'myapp.local') | list | length == 1
+          - api_result.json | selectattr('domain', 'equalto', 'database.local') | list | length == 1
+          - api_result.json | selectattr('domain', 'equalto', 'api.local') | list | length == 0 # Should be deleted
+          - api_result.json | selectattr('domain', 'equalto', 'alias.local') | list | length == 1
+        fail_msg: "API verification failed - unexpected state in AdGuard"
+        success_msg: "API verification successful - AdGuard state is correct"
+
+    - name: Display final AdGuard state
+      debug:
+        msg: "AdGuard DNS rewrites: {{ api_result.json }}"

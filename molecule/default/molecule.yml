@@ -1,0 +1,52 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: molecule/default/requirements.yml
+driver:
+  name: docker
+platforms:
+  - name: adguard
+    image: adguard/adguardhome:latest
+    pre_build_image: true
+    networks:
+      - name: ${MOLECULE_DOCKER_NETWORK}
+    published_ports:
+      - 0.0.0.0:3000:3000/tcp
+    volumes:
+      - /tmp/collection/files:/opt/adguard/conf
+    command: --no-check-update --config /opt/adguard/conf/AdGuardHome.yaml
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callbacks_enabled: ansible.posix.profile_tasks
+      fact_caching: jsonfile
+      fact_caching_connection: /tmp/molecule_facts
+      fact_caching_timeout: 3600
+  inventory:
+    host_vars:
+      ansible-test:
+        ansible_python_interpreter: /usr/bin/python3
+  env:
+    ANSIBLE_LIBRARY: "/collections/ansible_collections/eliminyro/adguard/plugins/modules"
+  options:
+    vvv: true
+  playbooks:
+    converge: ${MOLECULE_SCENARIO_DIRECTORY}/converge.yml
+    prepare: ${MOLECULE_SCENARIO_DIRECTORY}/prepare.yml
+    verify: ${MOLECULE_SCENARIO_DIRECTORY}/verify.yml
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - create
+    - prepare
+    - converge
+    - verify
+    - destroy
