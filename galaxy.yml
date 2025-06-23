@@ -1,0 +1,36 @@
+namespace: eliminyro
+
+name: adguard
+
+version: 1.0.0
+
+readme: README.md
+
+authors:
+  - Pavel Eliminyro public@eliminyro.me
+
+description: Ansible collection for AdGuard Home management
+
+license:
+  - GPL-3.0-or-later
+
+tags:
+  - adguard
+  - dns
+  - adblocker
+  - adblock
+  - privacy
+  - networking
+  - security
+
+dependencies: {}
+
+repository: https://github.com/eliminyro/eliminyro.adguard
+
+documentation: https://github.com/eliminyro/eliminyro.adguard
+
+homepage: https://github.com/eliminyro/eliminyro.adguard
+
+issues: https://github.com/eliminyro/eliminyro.adguard/issues
+
+build_ignore: []
