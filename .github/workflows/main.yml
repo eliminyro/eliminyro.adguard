@@ -1,0 +1,47 @@
+# .github/workflows/main.yml
+name: Test Collection
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/eliminyro/ansible-sanity:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ansible_collections/eliminyro/adguard
+      - name: Install Ansible
+        run: pip install ansible-core
+      - name: Run sanity tests
+        run: ansible-test sanity --docker -v
+        working-directory: ansible_collections/eliminyro/adguard
+  molecule:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/eliminyro/molecule:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
+      options: --privileged
+      volumes:
+        - /tmp/collection:/__w/eliminyro.adguard/eliminyro.adguard/ansible_collections/eliminyro/adguard
+
+    needs: sanity
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ansible_collections/eliminyro/adguard
+      - name: Run molecule tests
+        run: molecule test
+        working-directory: ansible_collections/eliminyro/adguard
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          ANSIBLE_COLLECTIONS_PATH: "/__w/eliminyro.adguard/eliminyro.adguard/ansible_collections"
+          MOLECULE_DOCKER_NETWORK: ${{ job.container.network }}
