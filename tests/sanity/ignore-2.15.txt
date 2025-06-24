@@ -1,0 +1,4 @@
+plugins/modules/adguard_dns_rewrite.py import-2.7!skip
+plugins/modules/adguard_dns_rewrite.py import-3.5!skip
+plugins/modules/adguard_dns_rewrite.py compile-2.7!skip
+plugins/modules/adguard_dns_rewrite.py compile-3.5!skip

@@ -1,0 +1,90 @@
+---
+- name: Converge
+  hosts: localhost
+  gather_facts: no
+  vars:
+    adguard_url: "http://adguard:3000"
+    adguard_user: "admin"
+    adguard_pass: "password"
+    test_rewrites:
+      - domain: myapp.local
+        answer: 192.168.1.100
+      - domain: database.local
+        answer: 192.168.1.101
+      - domain: api.local
+        answer: 192.168.1.102
+      - domain: alias.local
+        answer: myapp.local
+
+  tasks:
+    - name: Create DNS rewrites
+      eliminyro.adguard.adguard_dns_rewrite:
+        url: "{{ adguard_url }}"
+        username: "{{ adguard_user }}"
+        password: "{{ adguard_pass }}"
+        domain: "{{ item.domain }}"
+        answer: "{{ item.answer }}"
+        state: present
+      loop: "{{ test_rewrites }}"
+      register: create_results
+
+    - name: Test idempotency - run same rewrites again
+      eliminyro.adguard.adguard_dns_rewrite:
+        url: "{{ adguard_url }}"
+        username: "{{ adguard_user }}"
+        password: "{{ adguard_pass }}"
+        domain: "{{ item.domain }}"
+        answer: "{{ item.answer }}"
+        state: present
+      loop: "{{ test_rewrites }}"
+      register: idempotent_results
+
+    - name: Update a DNS rewrite
+      eliminyro.adguard.adguard_dns_rewrite:
+        url: "{{ adguard_url }}"
+        username: "{{ adguard_user }}"
+        password: "{{ adguard_pass }}"
+        domain: myapp.local
+        answer: 192.168.1.200
+        state: present
+      register: update_result
+
+    - name: Test check mode
+      eliminyro.adguard.adguard_dns_rewrite:
+        url: "{{ adguard_url }}"
+        username: "{{ adguard_user }}"
+        password: "{{ adguard_pass }}"
+        domain: checkmode.local
+        answer: 192.168.1.199
+        state: present
+      check_mode: yes
+      register: check_mode_result
+
+    - name: Verify check mode didn't create entry
+      eliminyro.adguard.adguard_dns_rewrite:
+        url: "{{ adguard_url }}"
+        username: "{{ adguard_user }}"
+        password: "{{ adguard_pass }}"
+        domain: checkmode.local
+        answer: 192.168.1.199
+        state: present
+      register: check_mode_verify
+
+    - name: Delete a DNS rewrite
+      eliminyro.adguard.adguard_dns_rewrite:
+        url: "{{ adguard_url }}"
+        username: "{{ adguard_user }}"
+        password: "{{ adguard_pass }}"
+        domain: api.local
+        state: absent
+      register: delete_result
+
+    - name: Store check mode results
+      set_fact:
+        dns_rewrite_results: "{{ create_results }}"
+        update_test_result: "{{ update_result }}"
+        idempotent_test_results: "{{ idempotent_results }}"
+        check_mode_test_result: "{{ check_mode_result }}"
+        check_mode_verify_result: "{{ check_mode_verify }}"
+        delete_test_result: "{{ delete_result }}"
+        cacheable: yes

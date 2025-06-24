@@ -1,0 +1,21 @@
+---
+- name: Prepare AdGuard Home
+  hosts: adguard
+  gather_facts: no
+  tasks:
+
+    - name: Wait for AdGuard Home to start
+      wait_for:
+        port: 3000
+        host: "{{ inventory_hostname }}"
+        delay: 5
+        timeout: 60
+      delegate_to: localhost
+
+    - name: Check AdGuard Home is accessible
+      uri:
+        url: "http://{{ inventory_hostname }}:3000"
+        status_code: [200, 302]
+      delegate_to: localhost
+      retries: 5
+      delay: 2
