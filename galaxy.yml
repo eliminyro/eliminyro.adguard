@@ -21,4 +21,13 @@ repository: https://github.com/eliminyro/eliminyro.adguard
 documentation: https://github.com/eliminyro/eliminyro.adguard
 homepage: https://github.com/eliminyro/eliminyro.adguard
 issues: https://github.com/eliminyro/eliminyro.adguard/issues
-build_ignore: []
+build_ignore:
+  - .github
+  - .gitignore
+  - .ansible-lint
+  - .yamllint
+  - .ansible
+  - .vscode
+  - molecule
+  - tests
+  - files

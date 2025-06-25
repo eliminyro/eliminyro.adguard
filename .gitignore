@@ -1,2 +1,3 @@
 ansible_collections/
 tests/output/
+*.tar.gz
