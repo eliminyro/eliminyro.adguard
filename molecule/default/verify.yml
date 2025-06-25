@@ -1,10 +1,10 @@
 ---
 - name: Verify
   hosts: localhost
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Verify initial creation results
-      assert:
+      ansible.builtin.assert:
         that:
           - item.changed == true
           - item.msg == "DNS rewrite created successfully"
@@ -15,7 +15,7 @@
       loop: "{{ dns_rewrite_results.results }}"
 
     - name: Verify idempotency
-      assert:
+      ansible.builtin.assert:
         that:
           - item.changed == false
           - "'already exists with same values' in item.msg"
@@ -24,7 +24,7 @@
       loop: "{{ idempotent_test_results.results }}"
 
     - name: Verify update operation
-      assert:
+      ansible.builtin.assert:
         that:
           - update_test_result.changed == true
           - update_test_result.msg == "DNS rewrite updated successfully"
@@ -33,7 +33,7 @@
         success_msg: "Update operation successful"
 
     - name: Verify check mode
-      assert:
+      ansible.builtin.assert:
         that:
           - check_mode_test_result.changed == true
           - check_mode_verify_result.changed == true # Should create since check mode didn't actually create
@@ -41,15 +41,23 @@
         success_msg: "Check mode working correctly"
 
     - name: Verify delete operation
-      assert:
+      ansible.builtin.assert:
         that:
           - delete_test_result.changed == true
           - delete_test_result.msg == "DNS rewrite deleted successfully"
         fail_msg: "Delete operation failed"
         success_msg: "Delete operation successful"
 
+    - name: Verify deletion idempotency
+      ansible.builtin.assert:
+        that:
+          - deletion_idempotency_test_result.changed == false
+          - deletion_idempotency_test_result.msg == "DNS rewrite does not exist"
+        fail_msg: "Deletion idempotency test failed"
+        success_msg: "Deletion idempotency working correctly"
+
     - name: Query AdGuard API directly to verify state
-      uri:
+      ansible.builtin.uri:
         url: "http://adguard:3000/control/rewrite/list"
         method: GET
         headers:
@@ -58,7 +66,7 @@
       register: api_result
 
     - name: Verify expected entries exist in AdGuard
-      assert:
+      ansible.builtin.assert:
         that:
           - api_result.json | selectattr('domain', 'equalto', 'myapp.local') | list | length == 1
           - api_result.json | selectattr('domain', 'equalto', 'database.local') | list | length == 1
@@ -68,5 +76,5 @@
         success_msg: "API verification successful - AdGuard state is correct"
 
     - name: Display final AdGuard state
-      debug:
+      ansible.builtin.debug:
         msg: "AdGuard DNS rewrites: {{ api_result.json }}"
