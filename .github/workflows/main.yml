@@ -1,10 +1,17 @@
 # .github/workflows/main.yml
 name: Test Adguard Home Ansible Collection
 
-on: [pull_request, workflow_dispatch]
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, closed]
 
 jobs:
   lint:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.merged == true ||
+      contains(fromJSON('["opened", "synchronize"]'), github.event.action)
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/eliminyro/ansible-tests:latest
@@ -60,5 +67,4 @@ jobs:
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
-          ANSIBLE_COLLECTIONS_PATH: "/__w/eliminyro.adguard/eliminyro.adguard/ansible_collections"
           MOLECULE_DOCKER_NETWORK: ${{ job.container.network }}
