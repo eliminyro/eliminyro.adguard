@@ -1,7 +1,7 @@
 ---
 - name: Converge
   hosts: localhost
-  gather_facts: no
+  gather_facts: false
   vars:
     adguard_url: "http://adguard:3000"
     adguard_user: "admin"
@@ -17,6 +17,7 @@
         answer: myapp.local
 
   tasks:
+
     - name: Create DNS rewrites
       eliminyro.adguard.adguard_dns_rewrite:
         url: "{{ adguard_url }}"
@@ -57,7 +58,7 @@
         domain: checkmode.local
         answer: 192.168.1.199
         state: present
-      check_mode: yes
+      check_mode: true
       register: check_mode_result
 
     - name: Verify check mode didn't create entry
@@ -79,6 +80,15 @@
         state: absent
       register: delete_result
 
+    - name: Deletion idempotency check
+      eliminyro.adguard.adguard_dns_rewrite:
+        url: "{{ adguard_url }}"
+        username: "{{ adguard_user }}"
+        password: "{{ adguard_pass }}"
+        domain: api.local
+        state: absent
+      register: deletion_idempotency_result
+
     - name: Store check mode results
       set_fact:
         dns_rewrite_results: "{{ create_results }}"
@@ -87,4 +97,5 @@
         check_mode_test_result: "{{ check_mode_result }}"
         check_mode_verify_result: "{{ check_mode_verify }}"
         delete_test_result: "{{ delete_result }}"
-        cacheable: yes
+        deletion_idempotency_test_result: "{{ deletion_idempotency_result }}"
+        cacheable: true
